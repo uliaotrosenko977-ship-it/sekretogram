@@ -1,45 +1,37 @@
+const express = require("express");
 const http = require("http");
-const fs = require("fs");
-const path = require("path");
 const WebSocket = require("ws");
 
-const messages = require("./messages");
+const app = express();
 
+// Render сам передаёт порт через переменную PORT
 const PORT = process.env.PORT || 3000;
 
-const server = http.createServer((req, res) => {
-  // Отдаём frontend
-  if (req.method === "GET" && req.url === "/") {
-    const html = fs.readFileSync(
-      path.join(__dirname, "../frontend/index.html")
-    );
-    res.writeHead(200, { "Content-Type": "text/html" });
-    res.end(html);
-    return;
-  }
-
-  res.writeHead(404);
-  res.end("Not found");
+// Простой HTTP-ответ (Render его ждёт)
+app.get("/", (req, res) => {
+  res.send("SekretoGram backend is running");
 });
 
+// HTTP сервер
+const server = http.createServer(app);
+
+// WebSocket сервер
 const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws) => {
-  ws.on("message", (data) => {
-    const payload = JSON.parse(data.toString());
+  console.log("WebSocket client connected");
 
-    if (payload.type === "message") {
-      const saved = messages.saveMessage(payload);
+  ws.on("message", (message) => {
+    console.log("Received:", message.toString());
+    ws.send("Echo: " + message.toString());
+  });
 
-      wss.clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(saved));
-        }
-      });
-    }
+  ws.on("close", () => {
+    console.log("WebSocket client disconnected");
   });
 });
 
+// САМОЕ ВАЖНОЕ — слушаем порт
 server.listen(PORT, () => {
-  console.log("SekretoGram running on port", PORT);
+  console.log(`Server started on port ${PORT}`);
 });
