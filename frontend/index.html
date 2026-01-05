@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SekretoGram</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    #input {
+      display: flex;
+      border-top: 1px solid #334155;
+    }
+    input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      outline: none;
+    }
+    button {
+      padding: 10px;
+      background: #2563eb;
+      color: white;
+      border: none;
+    }
+    .msg {
+      margin-bottom: 6px;
+      background: #1e293b;
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="messages"></div>
+
+<div id="input">
+  <input id="text" placeholder="Сообщение">
+  <button onclick="send()">Отправить</button>
+</div>
+
+<script>
+  const ws = new WebSocket(
+    (location.protocol === "https:" ? "wss://" : "ws://") + location.host
+  );
+
+  const messagesDiv = document.getElementById("messages");
+
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.textContent = atob(msg.text); // расшифровка
+    messagesDiv.appendChild(div);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  };
+
+  function send() {
+    const input = document.getElementById("text");
+    ws.send(JSON.stringify({
+      type: "message",
+      chatId: "global",
+      from: "user",
+      text: input.value
+    }));
+    input.value = "";
+  }
+</script>
+
+</body>
+</html>
